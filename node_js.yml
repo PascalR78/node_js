@@ -1,0 +1,54 @@
+---
+- name: "Playbook NodeJS sur CentOS"
+  hosts: all
+  gather_facts: False
+  become: yes
+  vars:
+    node_apps_location: /usr/local/opt/node
+  tasks: 
+    - name: "Installation du repo Remi"
+      yum: 
+        name: "https://rpms.remirepo.net/enterprise/remi-release-7.rpm"
+        state: present
+    - name: "Importation Remi GPG key"
+      rpm_key:
+        key: "https://rpms.remirepo.net/RPM-GPG-KEY-remi"
+        state: present
+    - name: "Installation du repo EPEL"
+      yum: 
+        name: epel-release
+        state: present
+    - name: "Vérification de l'arrêt du pare-feu"
+      service: 
+        name: firewalld
+        state: stopped
+    - name: "Installation du Node.js and npm"
+      yum: 
+        name: npm
+        state: present
+        enablerepo: epel
+    - name: "Installation de Forever"
+      npm:
+        name: forever
+        global: yes
+        state: present
+    - name: "Vérification de l'existence du dossier de l'application Node.js"
+      file:
+        path: "{{ node_apps_location }}"
+        state: directory
+    - name: "Copie de l'exemple Node.js sur notre serveur"
+      copy: 
+        src: app
+        dest: "{{ node_apps_location }}"
+    - name: "Installation des dépendances définies dans le package.json"
+      npm:
+        path: "{{ node_apps_location }}/app"
+    - name: "Vérification des applications Node.js en cours d'exécution"
+      command: forever list
+      register: forever_list
+      changed_when : false
+    - name: "Lancement d'un exemple de Node.js"
+      command: "forever start {{ node_apps_location }}/app/app.js"
+      when: "forever_list.stdout.find(node_apps_location + '/app/app.js') == -1"
+
+
