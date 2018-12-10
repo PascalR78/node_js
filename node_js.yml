@@ -1,6 +1,6 @@
 ---
 - name: "Playbook NodeJS sur CentOS"
-  hosts: all
+  hosts: nodes
   gather_facts: False
   become: yes
   vars:
